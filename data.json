@@ -1,0 +1,81 @@
+{
+  "ultima_actualizacion": "2026-09-27",
+  "artistas": {
+    "diego_de_triana": {
+      "color": "#c9a227",
+      "youtube": {
+        "suscriptores": 48200,
+        "vistas_28d": 612000,
+        "watch_time_horas_28d": 21400,
+        "top_contenido": [
+          {"titulo": "Diego de Triana - Alma Flamenca (Videoclip Oficial)", "tipo": "video", "vistas": 184000, "likes": 9200},
+          {"titulo": "Improvisando una bulería en el estudio", "tipo": "short", "vistas": 96500, "likes": 7100},
+          {"titulo": "Diego de Triana en directo - Sala Costello", "tipo": "video", "vistas": 71200, "likes": 4300},
+          {"titulo": "3 acordes que todo guitarrista flamenco debe saber", "tipo": "short", "vistas": 58900, "likes": 5200}
+        ]
+      },
+      "tiktok": {
+        "seguidores": 132000,
+        "likes_totales": 2870000,
+        "top_contenido": [
+          {"titulo": "Cuando el cante se sale de madre 🔥", "vistas": 1450000, "likes": 187000},
+          {"titulo": "Respuesta a @usuario sobre el compás", "vistas": 620000, "likes": 54000},
+          {"titulo": "Ensayo antes del concierto", "vistas": 410000, "likes": 39500}
+        ]
+      }
+    },
+    "bruno_montoya": {
+      "color": "#4fd1c5",
+      "youtube": {
+        "suscriptores": 27600,
+        "vistas_28d": 298000,
+        "watch_time_horas_28d": 9800,
+        "top_contenido": [
+          {"titulo": "Bruno Montoya - Noches de Sevilla (Official Video)", "tipo": "video", "vistas": 112000, "likes": 6100},
+          {"titulo": "Detrás de cámaras del videoclip", "tipo": "short", "vistas": 43200, "likes": 3100},
+          {"titulo": "Sesión acústica en casa", "tipo": "video", "vistas": 38700, "likes": 2900}
+        ]
+      },
+      "tiktok": {
+        "seguidores": 88500,
+        "likes_totales": 1540000,
+        "top_contenido": [
+          {"titulo": "POV: se te olvida la letra en directo", "vistas": 890000, "likes": 112000},
+          {"titulo": "Nuevo tema en 30 segundos", "vistas": 356000, "likes": 41200},
+          {"titulo": "Colaboración con @artista", "vistas": 201000, "likes": 22800}
+        ]
+      }
+    },
+    "guillermo_fronteras": {
+      "color": "#e0546a",
+      "youtube": {
+        "suscriptores": 61300,
+        "vistas_28d": 745000,
+        "watch_time_horas_28d": 26900,
+        "top_contenido": [
+          {"titulo": "Guillermo Fronteras - Fronteras (Videoclip Oficial)", "tipo": "video", "vistas": 231000, "likes": 14200},
+          {"titulo": "Adelanto del nuevo single", "tipo": "short", "vistas": 128000, "likes": 9700},
+          {"titulo": "Guillermo Fronteras en el Festival del Cante", "tipo": "video", "vistas": 94500, "likes": 6300}
+        ]
+      },
+      "tiktok": {
+        "seguidores": 204000,
+        "likes_totales": 4120000,
+        "top_contenido": [
+          {"titulo": "El estribillo que no te puedes quitar de la cabeza", "vistas": 2100000, "likes": 298000},
+          {"titulo": "Grabando en el estudio a las 3am", "vistas": 875000, "likes": 96000},
+          {"titulo": "Reacción de mi abuela a la canción", "vistas": 640000, "likes": 88500}
+        ]
+      },
+      "spotify": {
+        "oyentes_mensuales": 312000,
+        "seguidores": 47800,
+        "top_canciones": [
+          {"titulo": "Fronteras", "reproducciones": 4850000},
+          {"titulo": "Sin Rumbo", "reproducciones": 2310000},
+          {"titulo": "Cal y Arena", "reproducciones": 1680000}
+        ]
+      }
+    }
+  }
+}
