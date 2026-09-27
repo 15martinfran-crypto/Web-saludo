@@ -1,8 +1,11 @@
-# Dashboard de Artistas
+# Compás — Dashboard de Artistas
 
 Dashboard web simple (HTML/CSS/JS puro) para visualizar métricas de artistas leyendo
 directamente un fichero `data.json` que actualizas a mano. No hay ninguna API en
 tiempo real: todo lo que ves en pantalla sale de ese archivo.
+
+La interfaz replica el diseño "Compás" (tema oscuro, tipografía Bodoni Moda +
+Manrope, chips de artista, hero y tarjetas de plataforma con gráfico de evolución).
 
 ## Cómo arrancar el servidor local
 
@@ -44,7 +47,8 @@ misma carpeta funciona igual de bien, ya que solo se sirven ficheros estáticos.
   "ultima_actualizacion": "2026-09-27",
   "artistas": {
     "clave_del_artista": {
-      "color": "#hexcolor",          // color de acento de ese artista en la interfaz
+      "color": "#hexcolor",          // color de acento de ese artista (chip, gráfico, botón)
+      "color_fondo": "#hexcolor",    // color oscuro del degradado de fondo del hero, a juego con "color"
       "youtube": {
         "suscriptores": 0,
         "vistas_28d": 0,

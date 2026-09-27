@@ -2,7 +2,8 @@
   "ultima_actualizacion": "2026-09-27",
   "artistas": {
     "diego_de_triana": {
-      "color": "#c9a227",
+      "color": "#d9a441",
+      "color_fondo": "#2b2010",
       "youtube": {
         "suscriptores": 48200,
         "vistas_28d": 612000,
@@ -25,7 +26,8 @@
       }
     },
     "bruno_montoya": {
-      "color": "#4fd1c5",
+      "color": "#6f94e8",
+      "color_fondo": "#121c33",
       "youtube": {
         "suscriptores": 27600,
         "vistas_28d": 298000,
@@ -47,7 +49,8 @@
       }
     },
     "guillermo_fronteras": {
-      "color": "#e0546a",
+      "color": "#a888e8",
+      "color_fondo": "#221936",
       "youtube": {
         "suscriptores": 61300,
         "vistas_28d": 745000,
