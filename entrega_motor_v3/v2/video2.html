@@ -1,0 +1,110 @@
+<html><meta charset="utf-8"><body style="margin:0;background:#000">
+<script src="three-gltf.js"></script><script src="models.js"></script><script src="stage.js"></script>
+<script src="set.js"></script><script src="disc_set.js"></script><script src="deco2.js"></script><script src="rig.js"></script><script src="expr.js"></script><script src="gestures.js"></script><script src="perf.js"></script><script src="cams.js"></script><script src="anim.js"></script>
+<script>
+var FPS=30, TOTAL=28.0, PI=Math.PI;
+function yaw(a,b){return Math.atan2(b[0]-a[0],b[1]-a[1]);}   // a,b = [x,z]
+function lerpA(a,b,u){return a+(b-a)*u;}
+function angLerp(a,b,u){var d=Math.atan2(Math.sin(b-a),Math.cos(b-a));return a+d*u;}
+function sm(u){u=Math.max(0,Math.min(1,u));return u*u*(3-2*u);}
+// pista [[t,[x,z],rot],...]: posicion lineal, giro suave por tramo
+function track(k,t){ if(t<=k[0][0])return {p:k[0][1],r:k[0][2]}; for(var i=0;i<k.length-1;i++){ if(t<=k[i+1][0]){ var u=(t-k[i][0])/(k[i+1][0]-k[i][0]); return {p:[lerpA(k[i][1][0],k[i+1][1][0],u),lerpA(k[i][1][1],k[i+1][1][1],u)], r:angLerp(k[i][2],k[i+1][2],sm(u))}; } } var l=k[k.length-1]; return {p:l[1],r:l[2]}; }
+function relp(pos,rot,dist,side){ var f=[Math.sin(rot),Math.cos(rot)], r=[f[1],-f[0]]; return [pos[0]+f[0]*dist+r[0]*side, pos[1]+f[1]*dist+r[1]*side]; }
+
+// ---------------- puestas en escena ----------------
+var MD=[0.4,-2.8];                                   // Mar sentado ante el portatil (mira a -z)
+var ZF=[1.5,-2.85];                                // Zapi junto a Mar (lado derecho de Mar)
+var ZS=[1.6,0.7];                                  // entrada de Zapi
+var TMZ=yaw(MD,ZF);                                  // Mar -> Zapi
+var K_M0=[1.8,0.3], K_M1=[-0.3,-1.4];                // cocina: Mar camina hacia la nevera
+var K_Z=[-1.6,-0.8];                                // cocina: Zapi
+var SOF={m:[-0.35,-0.75],z:[0.3,-0.75],sm:[-0.35,-1.3],sz:[0.3,-1.3]};            // salon: delante del sofa (se sientan de espaldas a el)
+var W0m=[-3.6,-0.35], W0z=[-2.9,-0.35];             // salon: inicio paseo
+var TR={
+ M:{
+  bedroom:[[0,MD,PI],[2.3,MD,PI],[3.1,MD,TMZ],[7.0,MD,TMZ]],
+  kitchen:[[10,K_M0,yaw(K_M0,K_M1)],[12.3,K_M1,yaw(K_M0,K_M1)],[12.8,K_M1,PI],[16.6,K_M1,PI],[17.3,K_M1,yaw(K_M1,K_Z)]],
+  living:[[19,W0m,PI/2],[21.6,SOF.m,PI/2],[22.3,SOF.m,0],[22.9,SOF.sm,0],[23.4,SOF.sm,0.3],[25.0,SOF.sm,0.3],[25.5,SOF.sm,PI/2]]
+ },
+ Z:{
+  bedroom:[[2.5,ZS,yaw(ZS,ZF)],[4.0,ZF,yaw(ZS,ZF)],[4.6,ZF,0.4],[6.6,ZF,0.4],[7.0,ZF,0]],
+  kitchen:[[15,K_Z,0]],
+  living:[[19,W0z,PI/2],[21.6,SOF.z,PI/2],[22.3,SOF.z,0],[22.9,SOF.sz,0],[23.4,SOF.sz,0.6],[25.0,SOF.sz,0.6],[25.5,SOF.sz,0.9]]
+ }
+};
+var SHOTS=[
+ {n:'med_a',   t0:0.0,  t1:3.0,  env:'bedroom', mv:'push',amt:0.4, tctx:1.0, subj:['M']},
+ {n:'two_med', t0:3.0,  t1:7.0,  env:'bedroom', mv:'zoom',amt:0.4, tctx:5.5, subj:['M','Z']},
+ {n:'close_b', t0:7.0,  t1:10.0, env:'bedroom', mv:'push',amt:0.4, tctx:8.0, subj:['Z']},
+ {n:'full_a',  t0:10.0, t1:13.4, env:'kitchen', follow:true, subj:['M']},
+ {n:'med_a',   t0:13.4, t1:15.0, env:'kitchen', mv:'push',amt:0.4, tctx:14.0, subj:['M']},
+ {n:'med_b',   t0:15.0, t1:17.5, env:'kitchen', mv:'push',amt:0.4, tctx:16.0, subj:['Z']},
+ {n:'two_med', t0:17.5, t1:19.0, env:'kitchen', mv:'zoom',amt:0.4, tctx:18.0, subj:['M','Z']},
+ {n:'two_wide',t0:19.0, t1:25.0, env:'living',  mv:'push',amt:0.4, tctx:null, follow:true, subj:['M','Z']},
+ {n:'two_med', t0:25.0, t1:28.0, env:'living',  mv:'push',amt:0.4, tctx:26.0, subj:['M','Z']}
+];
+var G={};
+Stage.ready.then(function(){
+ var M=Rig.mar({height:1.9}), Z=Rig.zappy({height:0.95}); G.M=M; G.Z=Z;
+ var pm=Perf.make(M,'mar',{dur:TOTAL,blink:5,
+   faces:[[0,'neutral'],[1.9,'duda'],[5.2,'calido'],[6.6,'neutral'],[10,'neutral'],[12.6,'concentrado'],[13.8,'admirado'],[17.4,'sorpresa'],[18.2,'feliz'],[19,'feliz'],[25.5,'risa']],
+   gestures:[{t:-1,name:'sentarse',dur:7.6},{t:0.3,name:'mouse',dur:5.0},{t:5.4,name:'asentir',dur:0.6},
+     {t:10.0,name:'caminar',dur:2.8},{t:12.7,name:'dar_mano',dur:1.9},{t:17.5,name:'sorpresa_salto',dur:1.0},
+     {t:19.0,name:'caminar',dur:2.6},{t:22.4,name:'sentarse',dur:6.0},{t:23.6,name:'mirar_der',dur:1.4},{t:25.6,name:'dar_mano',dur:1.8}]});
+ var pz=Perf.make(Z,'zappy',{dur:TOTAL,blink:9,
+   faces:[[0,'neutral'],[4.6,'feliz'],[7.2,'sorpresa'],[8.7,'risa'],[15,'feliz'],[15.8,'emocionado'],[19,'feliz'],[25.5,'risa']],
+   gestures:[{t:2.5,name:'caminar',dur:1.6},{t:4.7,name:'saludar',dur:1.8},{t:7.3,name:'abierto',dur:1.3},{t:8.8,name:'aplaudir',dur:1.0},
+     {t:15.7,name:'celebrar',dur:2.9},{t:19.0,name:'caminar',dur:2.6},{t:22.5,name:'sentarse',dur:6.0},{t:23.6,name:'mirar_der',dur:1.4},{t:25.6,name:(window.ZG||'celebrar'),dur:1.9}]});
+ function envAt(t){ for(var i=0;i<SHOTS.length;i++) if(t<SHOTS[i].t1-1e-9) return SHOTS[i].env; return 'living'; }
+ function shotIdx(t){ for(var i=0;i<SHOTS.length;i++) if(t<SHOTS[i].t1-1e-9) return i; return SHOTS.length-1; }
+ function stateAt(env,t){ var mt=track(TR.M[env],t), zt=track(TR.Z[env],t);
+   var sitU=(env==='living')?sm((t-22.4)/0.5):0; mt={p:mt.p,r:mt.r,y:0.1*sitU}; zt={p:zt.p,r:zt.r,y:0.22*sitU};
+   var zvis=!((env==='bedroom'&&t<2.45)||(env==='kitchen'&&t<15));
+   return {M:{pos:[mt.p[0],mt.y,mt.p[1]],rot:mt.r}, Z:{pos:[zt.p[0],zt.y,zt.p[1]],rot:zt.r,vis:zvis}}; }
+ function ctxOf(st){ return {a:{pos:st.M.pos,rot:st.M.rot,h:1.9}, b:{pos:st.Z.pos,rot:st.Z.rot,h:0.95}}; }
+ var camCache={};
+ function camFor(i,t){ return camFor2(SHOTS[i],i,t); }
+ function camFor2(s,i,t){
+   if(s.follow){ var st=stateAt(s.env,t), ctx=ctxOf(st);
+     if(s.n==='two_wide'){ /* contexto estable durante el paseo: media de las dos posiciones */ }
+     var sh=Cams.shot(s.n,ctx); return {spec:sh,moves:[],ctx:ctx}; }
+   if(camCache[i]) return camCache[i];
+   var st2=stateAt(s.env,s.tctx), ctx2=ctxOf(st2);
+   var mv=Cams.move(s.mv,s.n,ctx2,{t0:0,t1:s.t1-s.t0,amt:s.amt}); camCache[i]={spec:mv.spec,moves:mv.moves,ctx:ctx2}; return camCache[i]; }
+ G.shots=SHOTS;
+ function build(n){
+   var t=n/FPS, i=shotIdx(t), s=SHOTS[i]; if(window.OVR&&window.OVR[i]){ s=Object.assign({},s,window.OVR[i]); delete camCache[i]; } var c=camFor2(s,i,t), tl=t-s.t0, st=stateAt(s.env,t);
+   pm.at(t); pz.at(t);
+   var actors=[{group:M.group,pos:st.M.pos,rot:st.M.rot}]; if(st.Z.vis) actors.push({group:Z.group,pos:st.Z.pos,rot:st.Z.rot});
+   var spec={env:s.env,actors:actors,cam:c.spec.cam,look:c.spec.look,fov:c.spec.fov,shift:0};
+   spec.extra=function(sc,T2,S,d){
+     if(s.env==='bedroom') Deco2.apply(sc,T2,S,d);
+     if((s.env==='kitchen'&&(s.n==='med_a'||s.n==='two_med'))||s.env==='living'){ var fl=new T2.PointLight(0xffe6cc,3.0,7,1.6); fl.position.set(c.spec.cam[0]+0.2,c.spec.cam[1]+0.3,c.spec.cam[2]+0.3); sc.add(fl); }
+     if(s.env==='kitchen'){ // puerta de la nevera: el motor la trae abierta (rotation.y=-1.9); aqui se anima su giro
+       var u=sm((t-13.0)/0.9), ang=1.9*u; sc.traverse(function(o){ if(o.isGroup&&Math.abs(o.rotation.y+1.9)<1e-6){ o.position.x=0.5; o.children.forEach(function(ch){ ch.position.x=-ch.position.x; }); o.rotation.y=ang; } });
+     }
+   };
+   var f=Anim.frame(spec,{dur:TOTAL,cam:{creep:0,moves:c.moves},actors:[{blink:false},{blink:false}]},tl);
+   return {f:f,tl:tl,i:i,s:s,c:c,st:st,t:t,spec:spec};
+ }
+ G.frame=function(n,w,h){
+   var b=build(n); var cv=Stage.renderD(b.f,w,h,b.tl);
+   var a=0; for(var k=0;k<SHOTS.length-1;k++){ if(SHOTS[k].env!==SHOTS[k+1].env){ var cf=Math.round(SHOTS[k].t1*FPS);
+       if(n>=cf-4&&n<cf) a=(n-(cf-4)+1)/5; if(n>=cf&&n<cf+4) a=(4-(n-cf))/5; } }
+   if(a>0){ var x=cv.getContext('2d'); x.fillStyle='rgba(0,0,0,'+a+')'; x.fillRect(0,0,w,h); }
+   return cv; };
+ G.png=function(n,w,h){ return G.frame(n,w,h).toDataURL('image/png'); };
+ // comprobacion de encuadre con Cams.check: cabeza, torso, pies de cada personaje presente, con las articulaciones reales
+ G.check=function(n){
+   var b=build(n), T=Stage.THREE, cs=Anim.camAt(b.spec,{creep:0,moves:b.c.moves},b.tl), sh={cam:cs.cam,look:cs.look,fov:cs.fov}, out=[];
+   function pts(A,top){ var hd=A.jointWorld('head'), ch=A.jointWorld(A.joints.chest?'chest':'pelvis');
+     var g=A.group.position; return {cabeza:[hd.x,hd.y+top,hd.z],torso:[ch.x,ch.y,ch.z],pies:[g.x,g.y+0.02,g.z]}; }
+   var who=[]; if(b.s.subj.indexOf('M')>=0) who.push(['Mar',M,0.35]); if(b.s.subj.indexOf('Z')>=0&&b.st.Z.vis) who.push(['Zapi',Z,0.25]); var full=/^(full_|two_wide)/.test(b.s.n), close=/^(close_|eyes_)/.test(b.s.n); var only=close?(/_b$/.test(b.s.n)?'Zapi':'Mar'):null;
+   M.group.position.set(b.st.M.pos[0],0,b.st.M.pos[2]); M.group.rotation.y=b.st.M.rot; M.group.updateMatrixWorld(true);
+   Z.group.position.set(b.st.Z.pos[0],0,b.st.Z.pos[2]); Z.group.rotation.y=b.st.Z.rot; Z.group.updateMatrixWorld(true);
+   who.forEach(function(w){ var p=pts(w[1],w[2]); ['cabeza','torso','pies'].forEach(function(k){ if(k==='pies'&&!full) return; var r=Cams.check(sh,[p[k]],T)[0]; out.push([w[0],k,r.x,r.y,Math.abs(r.x)<0.9&&Math.abs(r.y)<0.9&&r.in]); }); });
+   return {n:n,shot:b.s.n,env:b.s.env,cam:cs.cam.map(function(v){return +v.toFixed(2)}),res:out}; };
+ G.total=Math.round(TOTAL*FPS);
+ window.done=true;
+}).catch(function(e){window.err=String(e)+'\n'+(e.stack||'')});
+</script></body></html>
