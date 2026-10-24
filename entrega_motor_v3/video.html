@@ -1,0 +1,84 @@
+<html><meta charset="utf-8"><body style="margin:0;background:#000">
+<script src="three-gltf.js"></script><script src="models.js"></script><script src="stage.js"></script>
+<script src="set.js"></script><script src="disc_set.js"></script><script src="deco2.js"></script><script src="rig.js"></script><script src="expr.js"></script><script src="gestures.js"></script><script src="perf.js"></script><script src="cams.js"></script><script src="anim.js"></script>
+<script>
+var FPS=30, TOTAL=28.0;
+function yaw(a,b){return Math.atan2(b[0]-a[0],b[2]-a[2]);}
+function lerpA(a,b,u){return a+(b-a)*u;}
+function angLerp(a,b,u){var d=Math.atan2(Math.sin(b-a),Math.cos(b-a));return a+d*u;}
+function sm(u){u=Math.max(0,Math.min(1,u));return u*u*(3-2*u);}
+// pista [[t,[x,z],rot],...]: interpola posicion (lineal) y giro (suave)
+function track(k,t){ if(t<=k[0][0])return {p:k[0][1],r:k[0][2]}; for(var i=0;i<k.length-1;i++){ if(t<=k[i+1][0]){ var u=(t-k[i][0])/(k[i+1][0]-k[i][0]); return {p:[lerpA(k[i][1][0],k[i+1][1][0],u),lerpA(k[i][1][1],k[i+1][1][1],u)], r:angLerp(k[i][2],k[i+1][2],sm(u))}; } } var l=k[k.length-1]; return {p:l[1],r:l[2]}; }
+function relp(c,dist,side){ var f=[Math.sin(c.rot),Math.cos(c.rot)], r=[f[1],-f[0]]; return [c.pos[0]+f[0]*dist+r[0]*side, c.pos[2]+f[1]*dist+r[1]*side]; }
+
+// ---------- escena fija de personajes ----------
+var MAR_DESK={pos:[0.4,0,-2.8],rot:Math.PI,h:1.9};
+var zEnd=relp(MAR_DESK,0.1,-1.25), zStart=relp(MAR_DESK,0.1,-4.6);
+// cocina
+var KM_A=[0.5,1.6], KM_B=[0.5,-1.3];            // Mar: inicio y nevera
+var KZ_A=[2.0,2.5], KZ_B=[1.4,-1.0];
+// salon
+var LM=[-0.55,0.0], LZ=[0.45,0.0];
+
+var SHOTS=[
+ {n:'med_a',   t0:0.0,  t1:4.5,  env:'bedroom', mv:'push'},
+ {n:'two_med', t0:4.5,  t1:8.0,  env:'bedroom', mv:'zoom'},
+ {n:'close_b', t0:8.0,  t1:11.0, env:'bedroom', mv:'push'},
+ {n:'full_a',  t0:11.0, t1:16.0, env:'kitchen', mv:'truck'},
+ {n:'med_b',   t0:16.0, t1:19.0, env:'kitchen', mv:'push'},
+ {n:'two_med', t0:19.0, t1:22.0, env:'kitchen', mv:'pull'},
+ {n:'two_wide',t0:22.0, t1:28.0, env:'living',  mv:'push'}
+];
+var MARTR={
+ bedroom:[[0,MAR_DESK.pos.filter(function(v,i){return i!=1}),Math.PI]],
+ kitchen:[[11.0,KM_A,Math.PI],[14.4,KM_B,Math.PI]],
+ living:[[22,LM,Math.PI/2]]
+};
+var ZTR={
+ bedroom:[[0,zStart,yaw([zStart[0],0,zStart[1]],[zEnd[0],0,zEnd[1]])],[1.6,zStart,yaw([zStart[0],0,zStart[1]],[zEnd[0],0,zEnd[1]])],[3.4,zEnd,yaw([zStart[0],0,zStart[1]],[zEnd[0],0,zEnd[1]])],[3.9,zEnd,yaw([zEnd[0],0,zEnd[1]],[MAR_DESK.pos[0],0,MAR_DESK.pos[2]])],[7.4,zEnd,yaw([zEnd[0],0,zEnd[1]],[MAR_DESK.pos[0],0,MAR_DESK.pos[2]])],[7.9,zEnd,0]],
+ kitchen:[[11.0,KZ_A,yaw([KZ_A[0],0,KZ_A[1]],[KZ_B[0],0,KZ_B[1]])],[11.4,KZ_A,yaw([KZ_A[0],0,KZ_A[1]],[KZ_B[0],0,KZ_B[1]])],[15.6,KZ_B,yaw([KZ_A[0],0,KZ_A[1]],[KZ_B[0],0,KZ_B[1]])],[16.0,KZ_B,0]],
+ living:[[22,LZ,-Math.PI/2]]
+};
+
+var G={};
+Stage.ready.then(function(){
+ var M=Rig.mar({height:1.9}), Z=Rig.zappy({height:0.95});
+ G.M=M;G.Z=Z;
+ var pm=Perf.make(M,'mar',{dur:TOTAL,blink:5,
+   faces:[[0,'neutral'],[1.7,'duda'],[5.2,'neutral'],[6.0,'calido'],[8.0,'neutral'],[11.0,'neutral'],[16.4,'sorpresa'],[18.0,'feliz'],[22.0,'feliz'],[24.5,'risa']],
+   gestures:[{t:-1,name:'sentarse',dur:8.7},{t:0.3,name:'mouse',dur:5.6},{t:6.0,name:'asentir',dur:0.6},{t:10.9,name:'caminar',dur:3.7},{t:16.3,name:'stop',dur:2.2},{t:23.0,name:'dar_mano',dur:2.6}]});
+ var pz=Perf.make(Z,'zappy',{dur:TOTAL,blink:9,
+   faces:[[0,'neutral'],[4.4,'feliz'],[8.4,'sorpresa'],[9.6,'risa'],[11.0,'neutral'],[17.2,'emocionado'],[22.0,'feliz']],
+   gestures:[{t:1.6,name:'caminar',dur:1.9},{t:4.6,name:'saludar',dur:1.6},{t:11.2,name:'caminar',dur:4.4},{t:17.3,name:'celebrar',dur:4.2},{t:23.0,name:'saludar',dur:2.6}]});
+ function shotAt(t){ for(var i=0;i<SHOTS.length;i++) if(t<SHOTS[i].t1-1e-9) return i; return SHOTS.length-1; }
+ function ctxFor(env,t){ // ctx de camara: posiciones fijas representativas del plano
+   var mt=track(MARTR[env],t), zt=track(ZTR[env],t);
+   return {a:{pos:[mt.p[0],0,mt.p[1]],rot:mt.r,h:1.9}, b:{pos:[zt.p[0],0,zt.p[1]],rot:zt.r,h:0.95}};
+ }
+ var camCache={};
+ function camFor(i){ if(camCache[i])return camCache[i]; var s=SHOTS[i], tref=s.t0;
+   // contexto de camara tomado en un instante estable del plano
+   var tctx={0:0.5,1:5.5,2:8.5,3:13.5,4:17.0,5:20.0,6:23.5}[i]; var ctx=ctxFor(s.env,tctx);
+   if(i==3){ ctx.a.pos=[0.5,0,0.2]; ctx.a.rot=-72.8*Math.PI/180; } /* a virtual: situa full_a detras de Mar, mirando al fondo */
+   var mv=Cams.move(s.mv,s.n,ctx,{t0:0,t1:s.t1-s.t0}); camCache[i]={mv:mv,ctx:ctx}; return camCache[i]; }
+ G.info=function(){return SHOTS;};
+ G.frame=function(n,w,h){
+   var t=n/FPS, i=shotAt(t), s=SHOTS[i], c=camFor(i), tl=t-s.t0;
+   pm.at(t); pz.at(t);
+   var mt=track(MARTR[s.env],t), zt=track(ZTR[s.env],t);
+   var actors=[{group:M.group,pos:[mt.p[0],0,mt.p[1]],rot:mt.r}];
+   if(s.env!=='bedroom'||t>=1.5) actors.push({group:Z.group,pos:[zt.p[0],0,zt.p[1]],rot:zt.r});
+   var spec={env:s.env,actors:actors,cam:c.mv.spec.cam,look:c.mv.spec.look,fov:c.mv.spec.fov,shift:0};
+   if(s.env==='bedroom') spec.extra=function(sc,T2,S,d){Deco2.apply(sc,T2,S,d);};
+   var f=Anim.frame(spec,{dur:TOTAL,cam:{creep:0.03,moves:c.mv.moves},actors:[{blink:false},{blink:false}]},tl);
+   var cv=Stage.renderD(f,w,h,tl);
+   // fundido a negro solo al cambiar de escenario: 4 fotogramas antes y 4 despues del corte
+   var a=0; for(var k=0;k<SHOTS.length-1;k++){ if(SHOTS[k].env!==SHOTS[k+1].env){ var cf=Math.round(SHOTS[k].t1*FPS); if(n>=cf-4&&n<cf) a=(n-(cf-4)+1)/4; if(n>=cf&&n<cf+4) a=1-(n-cf)/4; } }
+   if(a>0){ var x=cv.getContext('2d'); x.fillStyle='rgba(0,0,0,'+a+')'; x.fillRect(0,0,w,h); }
+   return cv;
+ };
+ G.png=function(n,w,h){ return G.frame(n,w,h).toDataURL('image/png'); };
+ G.total=Math.round(TOTAL*FPS);
+ window.done=true;
+}).catch(function(e){window.err=String(e)+'\n'+(e.stack||'')});
+</script></body></html>
